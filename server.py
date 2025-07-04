@@ -88,8 +88,6 @@ def handle_command(data):
         # Remove excessive empty lines
         while '\n\n\n' in output:
             output = output.replace('\n\n\n', '\n\n')
-        # Debug: print what we're sending to help diagnose
-        print(f"DEBUG - Clean output: {repr(output[:100])}")
     emit('response', output + f'\n{cwd} $ ')
 
 @socketio.on('connect')
@@ -99,7 +97,9 @@ def handle_connect():
     emit('initial_prompt', f'{cwd} $ ')
 
 if __name__ == '__main__':
+    # Get port from environment variable (for deployment platforms)
+    port = int(os.environ.get('PORT', 8000))
     # Listen on all IP addresses (0.0.0.0) so others can connect
-    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
 
 
