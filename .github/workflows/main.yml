@@ -39,7 +39,7 @@ jobs:
         echo "gunicorn==21.2.0" >> requirements.txt
         
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: unix-terminal-app
         path: |
