@@ -51,14 +51,26 @@ def handle_command(data):
                     ls_parts.append('-1')
                 result = subprocess.run(ls_parts, capture_output=True, text=True, cwd=os.getcwd())
             else:
-                # Use shlex to properly parse the command with quotes
-                try:
-                    # Try to parse the command properly
-                    cmd_parts = shlex.split(cmd)
-                    result = subprocess.run(cmd_parts, capture_output=True, text=True, cwd=os.getcwd())
-                except ValueError:
-                    # If shlex fails, fall back to shell=True but escape properly
-                    result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=os.getcwd())
+                # Handle special commands that might not be available in containers
+                if cmd.strip() == 'cal':
+                    # Use Python to generate calendar if cal command not found
+                    result = subprocess.run(['python3', '-c', 
+                        'import calendar; import datetime; '
+                        'now = datetime.datetime.now(); '
+                        'print(calendar.month(now.year, now.month))'], 
+                        capture_output=True, text=True, cwd=os.getcwd())
+                elif cmd.strip() == 'time':
+                    # Provide time command alternative
+                    result = subprocess.run(['date'], capture_output=True, text=True, cwd=os.getcwd())
+                else:
+                    # Use shlex to properly parse the command with quotes
+                    try:
+                        # Try to parse the command properly
+                        cmd_parts = shlex.split(cmd)
+                        result = subprocess.run(cmd_parts, capture_output=True, text=True, cwd=os.getcwd())
+                    except ValueError:
+                        # If shlex fails, fall back to shell=True but escape properly
+                        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=os.getcwd())
             
             if result.stdout:
                 # Extremely aggressive cleaning of output
@@ -73,7 +85,18 @@ def handle_command(data):
                 clean_output = '\n'.join(clean_lines)
                 output_lines.append(clean_output)
             if result.stderr:
-                output_lines.append(result.stderr)
+                error_msg = result.stderr.strip()
+                if "No such file or directory" in error_msg:
+                    # Provide helpful suggestions for missing commands
+                    cmd_name = cmd.strip().split()[0]
+                    if cmd_name in ['cal', 'calendar']:
+                        output_lines.append(f"Command '{cmd_name}' not found. Try: date")
+                    elif cmd_name == 'time':
+                        output_lines.append(f"Command '{cmd_name}' not found. Try: date")
+                    else:
+                        output_lines.append(error_msg)
+                else:
+                    output_lines.append(error_msg)
         except Exception as e:
             output_lines.append(f"Error: {e}")
 
