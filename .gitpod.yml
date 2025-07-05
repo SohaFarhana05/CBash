@@ -1,0 +1,19 @@
+# List of ports to expose
+ports:
+  - port: 8000
+    onOpen: open-browser
+    description: Unix Terminal Web App
+
+# Commands to run on workspace start
+tasks:
+  - name: Setup and Run
+    init: |
+      pip install -r requirements.txt
+      gcc -o mysh main.c
+    command: |
+      python server.py
+
+# VS Code extensions to install
+vscode:
+  extensions:
+    - ms-python.python

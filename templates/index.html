@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Unix Terminal</title>
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: white;
+      font-family: monospace;
+      margin: 1rem 0;
+    }
+    #terminal {
+      width: 80vw;
+      height: 80vh;
+      border: 1px solid white;
+      border-radius: 4px;
+      padding: 10px;
+    }
+    .footer {
+      position: fixed;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .love {
+      color: #4A90E2;
+    }
+  </style>
+</head>
+<body>
+  <h1>My Unix Terminal</h1>
+  <div id="terminal"></div>
+  
+  <div class="footer">
+    Build with <span class="love">❤️</span> Soha
+  </div>
+
+  <script>
+    const socket = io();
+    const term = new Terminal();
+    term.open(document.getElementById('terminal'));
+
+    let buffer = '';
+    let history = [];
+    let historyIndex = -1;
+    let currentCwd = '/Users/sohafarhana/Desktop/CBash'; // Track current working directory
+
+    // Don't write initial $ here, wait for server to send full prompt
+    
+    socket.on('initial_prompt', data => {
+      term.write(data);
+      // Extract cwd from the prompt
+      currentCwd = data.replace(' $ ', '');
+    });
+
+    socket.on('clear_terminal', (data) => {
+      term.clear();
+      currentCwd = data.cwd;
+      term.write(data.cwd + ' $ ');
+    });
+
+    term.onData(e => {
+      const code = e.charCodeAt(0);
+
+      if (code === 13) {
+        term.write('\r\n');
+        if (buffer.trim()) history.push(buffer);
+        historyIndex = history.length;
+        socket.emit('command', buffer);
+        buffer = '';
+
+      } else if (code === 127) {
+        if (buffer.length > 0) {
+          buffer = buffer.slice(0, -1);
+          term.write('\b \b');
+        }
+
+      } else if (e === '\u001b[A') {
+        if (historyIndex > 0) {
+          historyIndex--;
+          term.write('\x1b[2K\r' + currentCwd + ' $ ' + history[historyIndex]);
+          buffer = history[historyIndex];
+        }
+
+      } else if (e === '\u001b[B') {
+        if (historyIndex < history.length - 1) {
+          historyIndex++;
+          term.write('\x1b[2K\r' + currentCwd + ' $ ' + history[historyIndex]);
+          buffer = history[historyIndex];
+        } else {
+          historyIndex = history.length;
+          buffer = '';
+          term.write('\x1b[2K\r' + currentCwd + ' $ ');
+        }
+
+      } else {
+        buffer += e;
+        term.write(e);
+      }
+    });
+
+    socket.on('response', data => {
+      // Clean the data before writing to terminal
+      let cleanData = data;
+      // Ensure proper line endings
+      cleanData = cleanData.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      // Write each line separately to ensure proper formatting
+      const lines = cleanData.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        if (i > 0) {
+          term.write('\r\n'); // Proper line break
+        }
+        term.write(lines[i]);
+        
+        // Update current working directory from the last line (prompt)
+        if (i === lines.length - 1 && lines[i].includes(' $ ')) {
+          currentCwd = lines[i].replace(' $ ', '');
+        }
+      }
+      term.scrollToBottom();
+    });
+  </script>
+</body>
+</html>
