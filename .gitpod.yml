@@ -1,7 +1,8 @@
 # List of ports to expose
 ports:
   - port: 8000
-    onOpen: open-browser
+    onOpen: open-preview
+    visibility: public
     description: Unix Terminal Web App
 
 # Commands to run on workspace start
@@ -10,7 +11,10 @@ tasks:
     init: |
       pip install -r requirements.txt
       gcc -o mysh main.c
+      echo "Setup complete!"
     command: |
+      echo "Starting Flask server on port 8000..."
+      export PORT=8000
       python server.py
 
 # VS Code extensions to install
