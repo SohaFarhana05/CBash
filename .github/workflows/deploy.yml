@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
     - name: Checkout code
@@ -52,7 +52,7 @@ jobs:
   # Deploy to Railway (uncomment and configure if using Railway)
   # deploy-railway:
   #   needs: build-and-test
-  #   runs-on: ubuntu-latest
+  #   runs-on: self-hosted
   #   if: github.ref == 'refs/heads/main'
   #   steps:
   #   - name: Checkout code
@@ -65,7 +65,7 @@ jobs:
   # Deploy to Heroku (uncomment and configure if using Heroku)
   # deploy-heroku:
   #   needs: build-and-test
-  #   runs-on: ubuntu-latest
+  #   runs-on: self-hosted
   #   if: github.ref == 'refs/heads/main'
   #   steps:
   #   - name: Checkout code
