@@ -1,4 +1,4 @@
-# Unix Terminal Web App
+# Unix Terminal Web App  - CBash
 
 A web-based Unix terminal built with Flask and Socket.IO, featuring:
 
